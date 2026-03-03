@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(Holding::class);
     }
 
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
     public function initials(): string
     {
         return Str::of($this->name)
