@@ -3,6 +3,7 @@
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,6 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::post('/stocks/buy', [StockController::class, 'buy'])->name('stocks.buy');
     Route::post('/stocks/sell', [StockController::class, 'sell'])->name('stocks.sell');
+
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 });
 
 require __DIR__.'/auth.php';
