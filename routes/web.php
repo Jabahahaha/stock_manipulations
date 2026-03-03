@@ -4,6 +4,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WatchlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -26,6 +27,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/stocks/sell', [StockController::class, 'sell'])->name('stocks.sell');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+    Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
+    Route::post('/watchlist', [WatchlistController::class, 'store'])->name('watchlist.store');
+    Route::delete('/watchlist/{id}', [WatchlistController::class, 'destroy'])->name('watchlist.destroy');
 });
 
 require __DIR__.'/auth.php';

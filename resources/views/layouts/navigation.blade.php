@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                         {{ __('History') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('watchlist.index')" :active="request()->routeIs('watchlist.*')">
+                        {{ __('Watchlist') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -81,6 +84,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                 {{ __('History') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('watchlist.index')" :active="request()->routeIs('watchlist.*')">
+                {{ __('Watchlist') }}
             </x-responsive-nav-link>
         </div>
 
