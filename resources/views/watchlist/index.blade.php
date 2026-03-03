@@ -78,7 +78,10 @@
             {{-- Watchlist Table --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Your Watchlist</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Your Watchlist</h3>
+                        <span id="refresh-timer" class="text-xs text-gray-400"></span>
+                    </div>
 
                     @if($items->isEmpty())
                         <p class="text-gray-500">Your watchlist is empty. Add stocks above to start tracking them.</p>
@@ -97,17 +100,17 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($items as $item)
-                                        <tr>
+                                        <tr data-id="{{ $item['id'] }}">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item['symbol'] }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item['company_name'] }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right" data-field="price">
                                                 @if($item['current_price'])
                                                     ${{ number_format($item['current_price'], 2) }}
                                                 @else
                                                     <span class="text-gray-400">N/A</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right" data-field="change">
                                                 @if($item['change'] !== null)
                                                     <span class="{{ $item['change'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                                         {{ $item['change'] >= 0 ? '+' : '' }}{{ number_format($item['change'], 2) }}
@@ -117,7 +120,7 @@
                                                     <span class="text-gray-400">N/A</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 text-sm text-center">
+                                            <td class="px-6 py-4 text-sm text-center" data-field="alert">
                                                 @if($item['alert_price'])
                                                     <div class="flex items-center justify-center gap-2">
                                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['alert_triggered'] ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800' }}">
@@ -166,4 +169,83 @@
 
         </div>
     </div>
+
+    @if(!$items->isEmpty())
+    @push('scripts')
+    <script>
+        (function () {
+            const INTERVAL = 60;
+            let countdown = INTERVAL;
+            const timerEl = document.getElementById('refresh-timer');
+
+            function formatNumber(n) {
+                return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function updatePrices() {
+                fetch('{{ route("watchlist.prices") }}')
+                    .then(r => r.json())
+                    .then(items => {
+                        items.forEach(item => {
+                            const row = document.querySelector(`tr[data-id="${item.id}"]`);
+                            if (!row) return;
+
+                            // Update price
+                            const priceCell = row.querySelector('[data-field="price"]');
+                            if (priceCell) {
+                                priceCell.innerHTML = item.current_price !== null
+                                    ? '$' + formatNumber(item.current_price)
+                                    : '<span class="text-gray-400">N/A</span>';
+                            }
+
+                            // Update change
+                            const changeCell = row.querySelector('[data-field="change"]');
+                            if (changeCell) {
+                                if (item.change !== null) {
+                                    const color = item.change >= 0 ? 'text-green-600' : 'text-red-600';
+                                    const sign = item.change >= 0 ? '+' : '';
+                                    changeCell.innerHTML = `<span class="${color}">${sign}${formatNumber(item.change)} (${item.change_percent})</span>`;
+                                } else {
+                                    changeCell.innerHTML = '<span class="text-gray-400">N/A</span>';
+                                }
+                            }
+
+                            // Update alert badge if triggered
+                            if (item.alert_triggered) {
+                                const alertCell = row.querySelector('[data-field="alert"]');
+                                if (alertCell) {
+                                    const badge = alertCell.querySelector('.rounded-full');
+                                    if (badge && !badge.classList.contains('bg-yellow-100')) {
+                                        badge.classList.remove('bg-blue-100', 'text-blue-800');
+                                        badge.classList.add('bg-yellow-100', 'text-yellow-800');
+                                        if (!badge.textContent.includes('Triggered')) {
+                                            badge.textContent = badge.textContent.trim() + ' — Triggered';
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        countdown = INTERVAL;
+                    })
+                    .catch(() => { countdown = INTERVAL; });
+            }
+
+            setInterval(() => {
+                countdown--;
+                if (timerEl) {
+                    timerEl.textContent = 'Next update in ' + countdown + 's';
+                }
+                if (countdown <= 0) {
+                    updatePrices();
+                }
+            }, 1000);
+
+            if (timerEl) {
+                timerEl.textContent = 'Next update in ' + countdown + 's';
+            }
+        })();
+    </script>
+    @endpush
+    @endif
 </x-app-layout>

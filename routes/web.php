@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
     Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
+    Route::get('/watchlist/prices', [WatchlistController::class, 'prices'])->name('watchlist.prices');
     Route::post('/watchlist', [WatchlistController::class, 'store'])->name('watchlist.store');
     Route::patch('/watchlist/{id}/alert', [WatchlistController::class, 'updateAlert'])->name('watchlist.updateAlert');
     Route::delete('/watchlist/{id}/alert', [WatchlistController::class, 'removeAlert'])->name('watchlist.removeAlert');

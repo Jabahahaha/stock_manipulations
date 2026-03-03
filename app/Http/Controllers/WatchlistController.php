@@ -39,6 +39,41 @@ class WatchlistController extends Controller
         return view('watchlist.index', compact('items', 'query', 'searchResults'));
     }
 
+    public function prices(Request $request, FinnhubService $api)
+    {
+        $watchlist = $request->user()->watchlists()->get();
+        $quotes = $api->quotes($watchlist->pluck('symbol')->toArray());
+
+        $items = $watchlist->map(function ($item) use ($quotes) {
+            $quote = $quotes[$item->symbol] ?? null;
+            $price = $quote['price'] ?? null;
+
+            // Check if alert should trigger
+            if ($price !== null && $item->alert_price && !$item->alert_triggered) {
+                $triggered = false;
+                if ($item->alert_condition === 'above' && $price >= $item->alert_price) {
+                    $triggered = true;
+                } elseif ($item->alert_condition === 'below' && $price <= $item->alert_price) {
+                    $triggered = true;
+                }
+                if ($triggered) {
+                    $item->update(['alert_triggered' => true]);
+                }
+            }
+
+            return [
+                'id' => $item->id,
+                'symbol' => $item->symbol,
+                'current_price' => $price,
+                'change' => $quote['change'] ?? null,
+                'change_percent' => $quote['change_percent'] ?? null,
+                'alert_triggered' => $item->alert_triggered,
+            ];
+        });
+
+        return response()->json($items);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
