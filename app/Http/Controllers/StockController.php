@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Holding;
 use App\Models\Transaction;
-use App\Services\AlphaVantageService;
+use App\Services\FinnhubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
 {
-    public function index(Request $request, AlphaVantageService $api)
+    public function index(Request $request, FinnhubService $api)
     {
         $query = $request->input('query');
         $results = [];

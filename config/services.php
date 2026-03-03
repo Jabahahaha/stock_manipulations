@@ -35,8 +35,8 @@ return [
         ],
     ],
 
-    'alpha_vantage' => [
-        'key' => env('ALPHA_VANTAGE_KEY'),
+    'finnhub' => [
+        'key' => env('FINNHUB_KEY'),
     ],
 
 ];

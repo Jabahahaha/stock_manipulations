@@ -3,7 +3,7 @@
 use App\Models\Holding;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\AlphaVantageService;
+use App\Services\FinnhubService;
 
 beforeEach(function () {
     $this->user = User::factory()->create(['balance' => 10000.00]);
@@ -21,11 +21,11 @@ test('stocks page loads for authenticated user', function () {
 });
 
 test('stocks page shows search results', function () {
-    $mock = Mockery::mock(AlphaVantageService::class);
+    $mock = Mockery::mock(FinnhubService::class);
     $mock->shouldReceive('search')->with('AAPL')->andReturn([
         ['1. symbol' => 'AAPL', '2. name' => 'Apple Inc', '3. type' => 'Equity', '4. region' => 'United States'],
     ]);
-    $this->app->instance(AlphaVantageService::class, $mock);
+    $this->app->instance(FinnhubService::class, $mock);
 
     $this->actingAs($this->user)
         ->get(route('stocks.index', ['query' => 'AAPL']))
@@ -35,7 +35,7 @@ test('stocks page shows search results', function () {
 });
 
 test('stocks page shows quote when symbol selected', function () {
-    $mock = Mockery::mock(AlphaVantageService::class);
+    $mock = Mockery::mock(FinnhubService::class);
     $mock->shouldReceive('search')->andReturn([]);
     $mock->shouldReceive('quote')->with('AAPL')->andReturn([
         'symbol' => 'AAPL',
@@ -45,7 +45,7 @@ test('stocks page shows quote when symbol selected', function () {
         'volume' => 50000000,
         'latest_trading_day' => '2026-03-03',
     ]);
-    $this->app->instance(AlphaVantageService::class, $mock);
+    $this->app->instance(FinnhubService::class, $mock);
 
     $this->actingAs($this->user)
         ->get(route('stocks.index', ['symbol' => 'AAPL', 'name' => 'Apple Inc', 'query' => 'AAPL']))
@@ -54,10 +54,10 @@ test('stocks page shows quote when symbol selected', function () {
 });
 
 test('stocks page handles null quote gracefully', function () {
-    $mock = Mockery::mock(AlphaVantageService::class);
+    $mock = Mockery::mock(FinnhubService::class);
     $mock->shouldReceive('search')->andReturn([]);
     $mock->shouldReceive('quote')->with('INVALID')->andReturn(null);
-    $this->app->instance(AlphaVantageService::class, $mock);
+    $this->app->instance(FinnhubService::class, $mock);
 
     $this->actingAs($this->user)
         ->get(route('stocks.index', ['symbol' => 'INVALID', 'query' => 'INVALID']))
