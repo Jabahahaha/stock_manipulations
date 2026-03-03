@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Add to Watchlist --}}
+            {{-- Search to Add --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Add Stock to Watchlist</h3>
 
@@ -24,25 +24,56 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('watchlist.store') }}" class="flex flex-wrap gap-3 items-end">
-                    @csrf
-                    <div>
-                        <label for="symbol" class="block text-sm font-medium text-gray-700">Symbol</label>
-                        <input type="text" name="symbol" id="symbol" required placeholder="e.g. AAPL"
-                            class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            style="text-transform: uppercase;">
-                    </div>
-                    <div>
-                        <label for="company_name" class="block text-sm font-medium text-gray-700">Company Name</label>
-                        <input type="text" name="company_name" id="company_name" required placeholder="e.g. Apple Inc"
-                            class="mt-1 block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Add
+                <form method="GET" action="{{ route('watchlist.index') }}" class="flex gap-4">
+                    <input type="text" name="query" value="{{ $query }}" placeholder="Search stocks by name or symbol..."
+                        class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700">
+                        Search
                     </button>
                 </form>
             </div>
+
+            {{-- Search Results --}}
+            @if($query && count($searchResults))
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Search Results</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($searchResults as $result)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $result['1. symbol'] }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $result['2. name'] }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $result['3. type'] }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                <form method="POST" action="{{ route('watchlist.store') }}" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="symbol" value="{{ $result['1. symbol'] }}">
+                                                    <input type="hidden" name="company_name" value="{{ $result['2. name'] }}">
+                                                    <button type="submit" class="text-indigo-600 hover:text-indigo-900 font-medium">Add to Watchlist</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @elseif($query && !count($searchResults))
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-500">No results found for "{{ $query }}".</div>
+                </div>
+            @endif
 
             {{-- Watchlist Table --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -86,17 +117,34 @@
                                                     <span class="text-gray-400">N/A</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                            <td class="px-6 py-4 text-sm text-center">
                                                 @if($item['alert_price'])
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['alert_triggered'] ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800' }}">
-                                                        {{ ucfirst($item['alert_condition']) }} ${{ number_format($item['alert_price'], 2) }}
-                                                        @if($item['alert_triggered'])
-                                                            — Triggered
-                                                        @endif
-                                                    </span>
-                                                @else
-                                                    <span class="text-gray-400">None</span>
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['alert_triggered'] ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800' }}">
+                                                            {{ ucfirst($item['alert_condition']) }} ${{ number_format($item['alert_price'], 2) }}
+                                                            @if($item['alert_triggered'])
+                                                                — Triggered
+                                                            @endif
+                                                        </span>
+                                                        <form method="POST" action="{{ route('watchlist.removeAlert', $item['id']) }}" class="inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-gray-400 hover:text-red-600 text-xs" title="Remove alert">&times;</button>
+                                                        </form>
+                                                    </div>
                                                 @endif
+                                                <form method="POST" action="{{ route('watchlist.updateAlert', $item['id']) }}" class="flex items-center justify-center gap-1 mt-1">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <select name="alert_condition" class="rounded-md border-gray-300 text-xs py-1 px-1 w-20">
+                                                        <option value="above" {{ $item['alert_condition'] === 'above' ? 'selected' : '' }}>Above</option>
+                                                        <option value="below" {{ $item['alert_condition'] === 'below' ? 'selected' : '' }}>Below</option>
+                                                    </select>
+                                                    <input type="number" name="alert_price" step="0.01" min="0.01" placeholder="Price"
+                                                        value="{{ $item['alert_price'] ?? '' }}"
+                                                        class="rounded-md border-gray-300 text-xs py-1 px-2 w-24">
+                                                    <button type="submit" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Set</button>
+                                                </form>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                                                 <a href="{{ route('stocks.index', ['symbol' => $item['symbol'], 'name' => $item['company_name']]) }}"

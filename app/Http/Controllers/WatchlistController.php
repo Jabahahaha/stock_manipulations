@@ -29,7 +29,14 @@ class WatchlistController extends Controller
             ];
         });
 
-        return view('watchlist.index', compact('items'));
+        // Search for stocks to add
+        $query = $request->input('query');
+        $searchResults = [];
+        if ($query) {
+            $searchResults = $api->search($query);
+        }
+
+        return view('watchlist.index', compact('items', 'query', 'searchResults'));
     }
 
     public function store(Request $request)
@@ -51,6 +58,37 @@ class WatchlistController extends Controller
         ]);
 
         return back()->with('success', $request->symbol . ' added to watchlist.');
+    }
+
+    public function updateAlert(Request $request, $id)
+    {
+        $request->validate([
+            'alert_price' => 'required|numeric|min:0.01',
+            'alert_condition' => 'required|in:above,below',
+        ]);
+
+        $item = $request->user()->watchlists()->findOrFail($id);
+
+        $item->update([
+            'alert_price' => $request->alert_price,
+            'alert_condition' => $request->alert_condition,
+            'alert_triggered' => false,
+        ]);
+
+        return back()->with('success', 'Alert set for ' . $item->symbol . ': ' . $request->alert_condition . ' $' . number_format($request->alert_price, 2));
+    }
+
+    public function removeAlert(Request $request, $id)
+    {
+        $item = $request->user()->watchlists()->findOrFail($id);
+
+        $item->update([
+            'alert_price' => null,
+            'alert_condition' => null,
+            'alert_triggered' => false,
+        ]);
+
+        return back()->with('success', 'Alert removed for ' . $item->symbol . '.');
     }
 
     public function destroy(Request $request, $id)
