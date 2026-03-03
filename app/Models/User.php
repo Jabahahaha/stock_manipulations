@@ -62,6 +62,11 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    public function watchlists(): HasMany
+    {
+        return $this->hasMany(Watchlist::class);
+    }
+
     public function initials(): string
     {
         return Str::of($this->name)
