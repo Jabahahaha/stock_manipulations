@@ -18,6 +18,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
+    Route::post('/stocks/buy', [StockController::class, 'buy'])->name('stocks.buy');
+    Route::post('/stocks/sell', [StockController::class, 'sell'])->name('stocks.sell');
 });
 
 require __DIR__.'/auth.php';
