@@ -9,8 +9,7 @@ class Transaction extends Model
 {
     protected $fillable = [
         'user_id',
-        'symbol',
-        'company_name',
+        'stock_id',
         'type',
         'quantity',
         'price_per_share',
@@ -20,5 +19,10 @@ class Transaction extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function stock(): BelongsTo
+    {
+        return $this->belongsTo(Stock::class);
     }
 }

@@ -10,6 +10,7 @@ class TransactionController extends Controller
     {
         $transactions = $request->user()
             ->transactions()
+            ->with('stock')
             ->latest()
             ->paginate(15);
 

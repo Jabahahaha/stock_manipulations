@@ -208,8 +208,9 @@ test('buy creates transaction record', function () {
         ]);
 
     $tx = Transaction::where('user_id', $this->user->id)->first();
-    expect($tx->symbol)->toBe('TSLA');
-    expect($tx->company_name)->toBe('Tesla Inc');
+    $tx->load('stock');
+    expect($tx->stock->symbol)->toBe('TSLA');
+    expect($tx->stock->company_name)->toBe('Tesla Inc');
     expect($tx->type)->toBe('buy');
     expect((float) $tx->price_per_share)->toEqual(250.0);
     expect((float) $tx->total_amount)->toEqual(500.0);
@@ -232,7 +233,8 @@ test('sell creates transaction record', function () {
         ]);
 
     $tx = Transaction::where('user_id', $this->user->id)->where('type', 'sell')->first();
-    expect($tx->symbol)->toBe('TSLA');
+    $tx->load('stock');
+    expect($tx->stock->symbol)->toBe('TSLA');
     expect($tx->type)->toBe('sell');
     expect((float) $tx->price_per_share)->toEqual(300.0);
     expect((float) $tx->total_amount)->toEqual(900.0);

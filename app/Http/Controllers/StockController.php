@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Holding;
+use App\Models\Stock;
 use App\Models\Transaction;
 use App\Services\FinnhubService;
 use Illuminate\Http\Request;
@@ -49,6 +50,11 @@ class StockController extends Controller
         DB::transaction(function () use ($user, $request, $totalCost) {
             $user->decrement('balance', $totalCost);
 
+            $stock = Stock::firstOrCreate(
+                ['symbol' => $request->symbol],
+                ['company_name' => $request->company_name]
+            );
+
             // Recalculate average cost: ((old_qty * old_avg) + (new_qty * new_price)) / total_qty
             $holding = $user->holdings()->where('symbol', $request->symbol)->first();
             if ($holding) {
@@ -68,8 +74,7 @@ class StockController extends Controller
             }
 
             $user->transactions()->create([
-                'symbol' => $request->symbol,
-                'company_name' => $request->company_name,
+                'stock_id' => $stock->id,
                 'type' => 'buy',
                 'quantity' => $request->quantity,
                 'price_per_share' => $request->price,
@@ -101,6 +106,11 @@ class StockController extends Controller
         DB::transaction(function () use ($user, $request, $holding, $totalProceeds) {
             $user->increment('balance', $totalProceeds);
 
+            $stock = Stock::firstOrCreate(
+                ['symbol' => $request->symbol],
+                ['company_name' => $request->company_name]
+            );
+
             $newQuantity = $holding->quantity - $request->quantity;
             if ($newQuantity <= 0) {
                 $holding->delete();
@@ -109,8 +119,7 @@ class StockController extends Controller
             }
 
             $user->transactions()->create([
-                'symbol' => $request->symbol,
-                'company_name' => $request->company_name,
+                'stock_id' => $stock->id,
                 'type' => 'sell',
                 'quantity' => $request->quantity,
                 'price_per_share' => $request->price,
