@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Stock;
 use App\Models\User;
 use App\Services\FinnhubService;
 
@@ -63,18 +64,17 @@ test('user can add stock to watchlist', function () {
         ])
         ->assertRedirect();
 
+    $stock = Stock::where('symbol', 'AAPL')->first();
+    expect($stock)->not->toBeNull();
     $this->assertDatabaseHas('watchlists', [
         'user_id' => $this->user->id,
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+        'stock_id' => $stock->id,
     ]);
 });
 
 test('user cannot add duplicate symbol to watchlist', function () {
-    $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->watchlists()->create(['stock_id' => $stock->id]);
 
     $this->actingAs($this->user)
         ->post(route('watchlist.store'), [
@@ -85,10 +85,8 @@ test('user cannot add duplicate symbol to watchlist', function () {
 });
 
 test('user can remove stock from watchlist', function () {
-    $item = $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $item = $this->user->watchlists()->create(['stock_id' => $stock->id]);
 
     $this->actingAs($this->user)
         ->delete(route('watchlist.destroy', $item->id))
@@ -99,10 +97,8 @@ test('user can remove stock from watchlist', function () {
 
 test('user cannot remove another users watchlist item', function () {
     $other = User::factory()->create();
-    $item = $other->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $item = $other->watchlists()->create(['stock_id' => $stock->id]);
 
     $this->actingAs($this->user)
         ->delete(route('watchlist.destroy', $item->id))
@@ -114,10 +110,8 @@ test('user cannot remove another users watchlist item', function () {
 // --- Alerts ---
 
 test('user can set price alert', function () {
-    $item = $this->user->watchlists()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
+    $item = $this->user->watchlists()->create(['stock_id' => $stock->id]);
 
     $this->actingAs($this->user)
         ->patch(route('watchlist.updateAlert', $item->id), [
@@ -133,9 +127,9 @@ test('user can set price alert', function () {
 });
 
 test('user can update existing alert', function () {
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
     $item = $this->user->watchlists()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 300.00,
         'alert_condition' => 'above',
         'alert_triggered' => true,
@@ -151,13 +145,13 @@ test('user can update existing alert', function () {
     $item->refresh();
     expect((float) $item->alert_price)->toEqual(200.00);
     expect($item->alert_condition)->toBe('below');
-    expect($item->alert_triggered)->toBeFalsy(); // resets on update
+    expect($item->alert_triggered)->toBeFalsy();
 });
 
 test('user can remove alert', function () {
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
     $item = $this->user->watchlists()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 300.00,
         'alert_condition' => 'above',
     ]);
@@ -172,10 +166,8 @@ test('user can remove alert', function () {
 });
 
 test('alert validation rejects invalid data', function () {
-    $item = $this->user->watchlists()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
+    $item = $this->user->watchlists()->create(['stock_id' => $stock->id]);
 
     $this->actingAs($this->user)
         ->patch(route('watchlist.updateAlert', $item->id), [
@@ -192,10 +184,8 @@ test('prices endpoint requires authentication', function () {
 });
 
 test('prices endpoint returns json with live prices', function () {
-    $item = $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
-    ]);
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->watchlists()->create(['stock_id' => $stock->id]);
 
     $mock = Mockery::mock(FinnhubService::class);
     $mock->shouldReceive('quotes')->with(['AAPL'])->andReturn([
@@ -214,9 +204,9 @@ test('prices endpoint returns json with live prices', function () {
 });
 
 test('prices endpoint triggers alert when condition met', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
     $item = $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 150.00,
         'alert_condition' => 'above',
         'alert_triggered' => false,
@@ -235,9 +225,9 @@ test('prices endpoint triggers alert when condition met', function () {
 });
 
 test('prices endpoint does not re-trigger already triggered alert', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
     $item = $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 150.00,
         'alert_condition' => 'above',
         'alert_triggered' => true,
@@ -258,9 +248,9 @@ test('prices endpoint does not re-trigger already triggered alert', function () 
 // --- Artisan Command ---
 
 test('alerts check command triggers alerts', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
     $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 150.00,
         'alert_condition' => 'above',
         'alert_triggered' => false,
@@ -280,9 +270,9 @@ test('alerts check command triggers alerts', function () {
 });
 
 test('alerts check command skips already triggered alerts', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
     $this->user->watchlists()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 150.00,
         'alert_condition' => 'above',
         'alert_triggered' => true,
@@ -294,9 +284,9 @@ test('alerts check command skips already triggered alerts', function () {
 });
 
 test('alerts check command handles below condition', function () {
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
     $this->user->watchlists()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
+        'stock_id' => $stock->id,
         'alert_price' => 200.00,
         'alert_condition' => 'below',
         'alert_triggered' => false,

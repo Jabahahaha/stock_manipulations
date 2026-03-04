@@ -9,8 +9,7 @@ class Watchlist extends Model
 {
     protected $fillable = [
         'user_id',
-        'symbol',
-        'company_name',
+        'stock_id',
         'alert_price',
         'alert_condition',
         'alert_triggered',
@@ -19,5 +18,10 @@ class Watchlist extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function stock(): BelongsTo
+    {
+        return $this->belongsTo(Stock::class);
     }
 }

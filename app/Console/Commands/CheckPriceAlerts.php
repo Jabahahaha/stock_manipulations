@@ -13,7 +13,8 @@ class CheckPriceAlerts extends Command
 
     public function handle(FinnhubService $api): int
     {
-        $alerts = Watchlist::whereNotNull('alert_price')
+        $alerts = Watchlist::with('stock')
+            ->whereNotNull('alert_price')
             ->where('alert_triggered', false)
             ->get();
 
@@ -22,16 +23,17 @@ class CheckPriceAlerts extends Command
             return self::SUCCESS;
         }
 
-        $symbols = $alerts->pluck('symbol')->unique()->toArray();
+        $symbols = $alerts->pluck('stock.symbol')->unique()->toArray();
         $quotes = $api->quotes($symbols);
 
         $triggered = 0;
 
         foreach ($alerts as $alert) {
-            $price = $quotes[$alert->symbol]['price'] ?? null;
+            $symbol = $alert->stock->symbol;
+            $price = $quotes[$symbol]['price'] ?? null;
 
             if ($price === null) {
-                $this->warn("Could not fetch price for {$alert->symbol}, skipping.");
+                $this->warn("Could not fetch price for {$symbol}, skipping.");
                 continue;
             }
 
@@ -46,7 +48,7 @@ class CheckPriceAlerts extends Command
             if ($isTriggered) {
                 $alert->update(['alert_triggered' => true]);
                 $triggered++;
-                $this->info("ALERT: {$alert->symbol} is now \${$price} ({$alert->alert_condition} \${$alert->alert_price})");
+                $this->info("ALERT: {$symbol} is now \${$price} ({$alert->alert_condition} \${$alert->alert_price})");
             }
         }
 

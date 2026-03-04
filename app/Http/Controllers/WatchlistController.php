@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Stock;
 use App\Services\FinnhubService;
 use Illuminate\Http\Request;
 
@@ -9,17 +10,17 @@ class WatchlistController extends Controller
 {
     public function index(Request $request, FinnhubService $api)
     {
-        $watchlist = $request->user()->watchlists()->latest()->get();
+        $watchlist = $request->user()->watchlists()->with('stock')->latest()->get();
 
-        $quotes = $api->quotes($watchlist->pluck('symbol')->toArray());
+        $quotes = $api->quotes($watchlist->pluck('stock.symbol')->toArray());
 
         $items = $watchlist->map(function ($item) use ($quotes) {
-            $quote = $quotes[$item->symbol] ?? null;
+            $quote = $quotes[$item->stock->symbol] ?? null;
 
             return [
                 'id' => $item->id,
-                'symbol' => $item->symbol,
-                'company_name' => $item->company_name,
+                'symbol' => $item->stock->symbol,
+                'company_name' => $item->stock->company_name,
                 'current_price' => $quote['price'] ?? null,
                 'change' => $quote['change'] ?? null,
                 'change_percent' => $quote['change_percent'] ?? null,
@@ -41,11 +42,11 @@ class WatchlistController extends Controller
 
     public function prices(Request $request, FinnhubService $api)
     {
-        $watchlist = $request->user()->watchlists()->get();
-        $quotes = $api->quotes($watchlist->pluck('symbol')->toArray());
+        $watchlist = $request->user()->watchlists()->with('stock')->get();
+        $quotes = $api->quotes($watchlist->pluck('stock.symbol')->toArray());
 
         $items = $watchlist->map(function ($item) use ($quotes) {
-            $quote = $quotes[$item->symbol] ?? null;
+            $quote = $quotes[$item->stock->symbol] ?? null;
             $price = $quote['price'] ?? null;
 
             // Check if alert should trigger
@@ -63,7 +64,7 @@ class WatchlistController extends Controller
 
             return [
                 'id' => $item->id,
-                'symbol' => $item->symbol,
+                'symbol' => $item->stock->symbol,
                 'current_price' => $price,
                 'change' => $quote['change'] ?? null,
                 'change_percent' => $quote['change_percent'] ?? null,
@@ -82,14 +83,17 @@ class WatchlistController extends Controller
         ]);
 
         $user = $request->user();
+        $stock = Stock::firstOrCreate(
+            ['symbol' => $request->symbol],
+            ['company_name' => $request->company_name]
+        );
 
-        if ($user->watchlists()->where('symbol', $request->symbol)->exists()) {
+        if ($user->watchlists()->where('stock_id', $stock->id)->exists()) {
             return back()->withErrors(['symbol' => $request->symbol . ' is already on your watchlist.']);
         }
 
         $user->watchlists()->create([
-            'symbol' => $request->symbol,
-            'company_name' => $request->company_name,
+            'stock_id' => $stock->id,
         ]);
 
         return back()->with('success', $request->symbol . ' added to watchlist.');
@@ -102,7 +106,7 @@ class WatchlistController extends Controller
             'alert_condition' => 'required|in:above,below',
         ]);
 
-        $item = $request->user()->watchlists()->findOrFail($id);
+        $item = $request->user()->watchlists()->with('stock')->findOrFail($id);
 
         $item->update([
             'alert_price' => $request->alert_price,
@@ -110,12 +114,12 @@ class WatchlistController extends Controller
             'alert_triggered' => false,
         ]);
 
-        return back()->with('success', 'Alert set for ' . $item->symbol . ': ' . $request->alert_condition . ' $' . number_format($request->alert_price, 2));
+        return back()->with('success', 'Alert set for ' . $item->stock->symbol . ': ' . $request->alert_condition . ' $' . number_format($request->alert_price, 2));
     }
 
     public function removeAlert(Request $request, $id)
     {
-        $item = $request->user()->watchlists()->findOrFail($id);
+        $item = $request->user()->watchlists()->with('stock')->findOrFail($id);
 
         $item->update([
             'alert_price' => null,
@@ -123,13 +127,13 @@ class WatchlistController extends Controller
             'alert_triggered' => false,
         ]);
 
-        return back()->with('success', 'Alert removed for ' . $item->symbol . '.');
+        return back()->with('success', 'Alert removed for ' . $item->stock->symbol . '.');
     }
 
     public function destroy(Request $request, $id)
     {
-        $item = $request->user()->watchlists()->findOrFail($id);
-        $symbol = $item->symbol;
+        $item = $request->user()->watchlists()->with('stock')->findOrFail($id);
+        $symbol = $item->stock->symbol;
         $item->delete();
 
         return redirect()->route('watchlist.index')->with('success', $symbol . ' removed from watchlist.');
