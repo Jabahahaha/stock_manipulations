@@ -26,13 +26,16 @@ class FinnhubService
 
         $results = $response->json('result', []);
 
-        // Map to a consistent format
-        return collect($results)->map(fn ($item) => [
-            '1. symbol' => $item['symbol'] ?? '',
-            '2. name' => $item['description'] ?? '',
-            '3. type' => $item['type'] ?? '',
-            '4. region' => 'United States',
-        ])->toArray();
+        // Filter to US stocks only (non-US symbols contain a dot, e.g. VOW.DE)
+        // and map to a consistent format
+        return collect($results)
+            ->filter(fn ($item) => !str_contains($item['symbol'] ?? '', '.'))
+            ->map(fn ($item) => [
+                '1. symbol' => $item['symbol'] ?? '',
+                '2. name' => $item['description'] ?? '',
+                '3. type' => $item['type'] ?? '',
+                '4. region' => 'United States',
+            ])->values()->toArray();
     }
 
     /**

@@ -64,7 +64,7 @@
             {{-- API error --}}
             @if($symbol && !$quote)
                 <div class="bg-yellow-50 border border-yellow-200 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-yellow-800">Could not fetch quote for "{{ $symbol }}". The API may be rate-limited (25 requests/day on free tier). Please try again later.</div>
+                    <div class="p-6 text-yellow-800">Could not fetch quote for "{{ $symbol }}". This symbol may not be supported (only US stocks are available on the free tier), or the API may be temporarily unavailable.</div>
                 </div>
             @endif
 
