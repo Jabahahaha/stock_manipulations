@@ -119,11 +119,8 @@
                             {{-- Sell Form --}}
                             <div class="border rounded-lg p-4">
                                 <h4 class="text-lg font-semibold text-red-700 mb-3">Sell</h4>
-                                @php
-                                    $holding = auth()->user()->holdings()->where('symbol', $quote['symbol'])->first();
-                                @endphp
 
-                                @if($holding)
+                                @if($currentQuantity > 0)
                                     <form method="POST" action="{{ route('stocks.sell') }}">
                                         @csrf
                                         <input type="hidden" name="symbol" value="{{ $quote['symbol'] }}">
@@ -132,12 +129,12 @@
 
                                         <div class="mb-3">
                                             <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                                            <input type="number" name="quantity" min="0.000001" max="{{ $holding->quantity }}" step="any" required
+                                            <input type="number" name="quantity" min="0.000001" max="{{ $currentQuantity }}" step="any" required
                                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         </div>
 
                                         <p class="text-sm text-gray-500 mb-3">
-                                            You own: <span class="font-semibold">{{ $holding->quantity }} shares</span>
+                                            You own: <span class="font-semibold">{{ $currentQuantity }} shares</span>
                                         </p>
 
                                         @error('quantity')

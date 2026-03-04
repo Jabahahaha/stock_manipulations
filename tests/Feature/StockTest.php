@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Holding;
+use App\Models\Stock;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\FinnhubService;
@@ -77,22 +77,22 @@ test('user can buy stock', function () {
 
     expect((float) $this->user->fresh()->balance)->toEqual(9000.00);
 
-    $holding = Holding::where('user_id', $this->user->id)->where('symbol', 'AAPL')->first();
-    expect((float) $holding->quantity)->toEqual(10.0);
-    expect((float) $holding->average_cost)->toEqual(100.0);
-
     $tx = Transaction::where('user_id', $this->user->id)->first();
+    $tx->load('stock');
+    expect($tx->stock->symbol)->toBe('AAPL');
     expect($tx->type)->toBe('buy');
+    expect((float) $tx->quantity)->toEqual(10.0);
     expect((float) $tx->total_amount)->toEqual(1000.0);
 });
 
-test('buying stock updates existing holding with new average cost', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
-        'quantity' => 10,
-        'average_cost' => 100.00,
-    ]);
+test('buying stock twice accumulates transactions', function () {
+    $this->actingAs($this->user)
+        ->post(route('stocks.buy'), [
+            'symbol' => 'AAPL',
+            'company_name' => 'Apple Inc',
+            'price' => 100.00,
+            'quantity' => 10,
+        ]);
 
     $this->actingAs($this->user)
         ->post(route('stocks.buy'), [
@@ -102,9 +102,13 @@ test('buying stock updates existing holding with new average cost', function () 
             'quantity' => 10,
         ]);
 
-    $holding = $this->user->holdings()->where('symbol', 'AAPL')->first();
-    expect((float) $holding->quantity)->toEqual(20.0);
-    expect((float) $holding->average_cost)->toEqual(150.0);
+    $stock = Stock::where('symbol', 'AAPL')->first();
+    $txCount = Transaction::where('user_id', $this->user->id)
+        ->where('stock_id', $stock->id)
+        ->where('type', 'buy')
+        ->count();
+    expect($txCount)->toBe(2);
+    expect((float) $this->user->fresh()->balance)->toEqual(7000.00);
 });
 
 test('user cannot buy stock with insufficient balance', function () {
@@ -119,15 +123,18 @@ test('user cannot buy stock with insufficient balance', function () {
         ->assertSessionHasErrors('balance');
 
     expect((float) $this->user->fresh()->balance)->toEqual(10000.00);
-    expect(Holding::where('user_id', $this->user->id)->count())->toBe(0);
+    expect(Transaction::where('user_id', $this->user->id)->count())->toBe(0);
 });
 
 test('user can sell stock', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+    // Create a buy transaction first
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 10,
-        'average_cost' => 100.00,
+        'price_per_share' => 100.00,
+        'total_amount' => 1000.00,
     ]);
 
     $this->actingAs($this->user)
@@ -141,16 +148,16 @@ test('user can sell stock', function () {
         ->assertSessionHas('success');
 
     expect((float) $this->user->fresh()->balance)->toEqual(10750.00);
-    $holding = $this->user->holdings()->where('symbol', 'AAPL')->first();
-    expect((float) $holding->quantity)->toEqual(5.0);
 });
 
-test('selling all shares removes holding', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+test('selling all shares works correctly', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 10,
-        'average_cost' => 100.00,
+        'price_per_share' => 100.00,
+        'total_amount' => 1000.00,
     ]);
 
     $this->actingAs($this->user)
@@ -161,16 +168,21 @@ test('selling all shares removes holding', function () {
             'quantity' => 10,
         ]);
 
-    expect(Holding::where('user_id', $this->user->id)->count())->toBe(0);
     expect((float) $this->user->fresh()->balance)->toEqual(11500.00);
+
+    // Verify sell transaction was created
+    $sellTx = Transaction::where('user_id', $this->user->id)->where('type', 'sell')->first();
+    expect((float) $sellTx->quantity)->toEqual(10.0);
 });
 
 test('user cannot sell more shares than owned', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 5,
-        'average_cost' => 100.00,
+        'price_per_share' => 100.00,
+        'total_amount' => 500.00,
     ]);
 
     $this->actingAs($this->user)
@@ -182,8 +194,6 @@ test('user cannot sell more shares than owned', function () {
         ])
         ->assertRedirect()
         ->assertSessionHasErrors('quantity');
-
-    expect((float) $this->user->holdings()->where('symbol', 'AAPL')->first()->quantity)->toEqual(5.0);
 });
 
 test('user cannot sell stock they dont own', function () {
@@ -217,11 +227,13 @@ test('buy creates transaction record', function () {
 });
 
 test('sell creates transaction record', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 5,
-        'average_cost' => 200.00,
+        'price_per_share' => 200.00,
+        'total_amount' => 1000.00,
     ]);
 
     $this->actingAs($this->user)

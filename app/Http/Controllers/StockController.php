@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Holding;
 use App\Models\Stock;
-use App\Models\Transaction;
 use App\Services\FinnhubService;
+use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
 {
-    public function index(Request $request, FinnhubService $api)
+    public function index(Request $request, FinnhubService $api, PortfolioService $portfolio)
     {
         $query = $request->input('query');
         $results = [];
         $quote = null;
         $symbol = $request->input('symbol');
+        $currentQuantity = 0;
 
         // If a symbol is selected, fetch its quote; otherwise search
         if ($symbol) {
@@ -24,11 +24,17 @@ class StockController extends Controller
             if ($quote) {
                 $quote['company_name'] = $request->input('name', $symbol);
             }
+
+            // Compute current quantity from transactions
+            $stock = Stock::where('symbol', $symbol)->first();
+            if ($stock) {
+                $currentQuantity = $portfolio->getQuantity($request->user(), $stock->id);
+            }
         } elseif ($query) {
             $results = $api->search($query);
         }
 
-        return view('stocks.index', compact('query', 'results', 'quote', 'symbol'));
+        return view('stocks.index', compact('query', 'results', 'quote', 'symbol', 'currentQuantity'));
     }
 
     public function buy(Request $request)
@@ -55,24 +61,6 @@ class StockController extends Controller
                 ['company_name' => $request->company_name]
             );
 
-            // Recalculate average cost: ((old_qty * old_avg) + (new_qty * new_price)) / total_qty
-            $holding = $user->holdings()->where('symbol', $request->symbol)->first();
-            if ($holding) {
-                $newQuantity = $holding->quantity + $request->quantity;
-                $newAvgCost = (($holding->quantity * $holding->average_cost) + ($request->quantity * $request->price)) / $newQuantity;
-                $holding->update([
-                    'quantity' => $newQuantity,
-                    'average_cost' => round($newAvgCost, 2),
-                ]);
-            } else {
-                $user->holdings()->create([
-                    'symbol' => $request->symbol,
-                    'company_name' => $request->company_name,
-                    'quantity' => $request->quantity,
-                    'average_cost' => $request->price,
-                ]);
-            }
-
             $user->transactions()->create([
                 'stock_id' => $stock->id,
                 'type' => 'buy',
@@ -85,7 +73,7 @@ class StockController extends Controller
         return back()->with('success', "Bought {$request->quantity} shares of {$request->symbol} for \${$totalCost}.");
     }
 
-    public function sell(Request $request)
+    public function sell(Request $request, PortfolioService $portfolio)
     {
         $request->validate([
             'symbol' => 'required|string',
@@ -95,28 +83,17 @@ class StockController extends Controller
         ]);
 
         $user = $request->user();
-        $holding = $user->holdings()->where('symbol', $request->symbol)->first();
+        $stock = Stock::where('symbol', $request->symbol)->first();
+        $ownedQuantity = $stock ? $portfolio->getQuantity($user, $stock->id) : 0;
 
-        if (!$holding || $holding->quantity < $request->quantity) {
+        if ($ownedQuantity < $request->quantity) {
             return back()->withErrors(['quantity' => 'You don\'t own enough shares to sell.']);
         }
 
         $totalProceeds = round($request->price * $request->quantity, 2);
 
-        DB::transaction(function () use ($user, $request, $holding, $totalProceeds) {
+        DB::transaction(function () use ($user, $request, $stock, $totalProceeds) {
             $user->increment('balance', $totalProceeds);
-
-            $stock = Stock::firstOrCreate(
-                ['symbol' => $request->symbol],
-                ['company_name' => $request->company_name]
-            );
-
-            $newQuantity = $holding->quantity - $request->quantity;
-            if ($newQuantity <= 0) {
-                $holding->delete();
-            } else {
-                $holding->update(['quantity' => $newQuantity]);
-            }
 
             $user->transactions()->create([
                 'stock_id' => $stock->id,

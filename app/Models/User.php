@@ -49,14 +49,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
-    public function holdings(): HasMany
-    {
-        return $this->hasMany(Holding::class);
-    }
-
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
