@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Services\FinnhubService;
+use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 
 class PortfolioController extends Controller
 {
-    public function index(Request $request, FinnhubService $api)
+    public function index(Request $request, FinnhubService $api, PortfolioService $portfolio)
     {
         $user = $request->user();
-        $holdings = $user->holdings()->get();
+        $holdings = $portfolio->getHoldings($user);
 
         // Fetch live prices for all held symbols
         $quotes = $api->quotes($holdings->pluck('symbol')->toArray());

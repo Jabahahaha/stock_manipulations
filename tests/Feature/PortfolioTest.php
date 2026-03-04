@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Stock;
 use App\Models\User;
 use App\Services\FinnhubService;
 
@@ -34,11 +35,13 @@ test('portfolio shows empty state when no holdings', function () {
 });
 
 test('portfolio shows holdings with live prices', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'AAPL',
-        'company_name' => 'Apple Inc',
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 10,
-        'average_cost' => 100.00,
+        'price_per_share' => 100.00,
+        'total_amount' => 1000.00,
     ]);
 
     $mock = Mockery::mock(FinnhubService::class);
@@ -67,11 +70,13 @@ test('portfolio shows cash balance', function () {
 });
 
 test('portfolio calculates gain and loss', function () {
-    $this->user->holdings()->create([
-        'symbol' => 'TSLA',
-        'company_name' => 'Tesla Inc',
+    $stock = Stock::create(['symbol' => 'TSLA', 'company_name' => 'Tesla Inc']);
+    $this->user->transactions()->create([
+        'stock_id' => $stock->id,
+        'type' => 'buy',
         'quantity' => 5,
-        'average_cost' => 200.00,
+        'price_per_share' => 200.00,
+        'total_amount' => 1000.00,
     ]);
 
     $mock = Mockery::mock(FinnhubService::class);
