@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/stocks/buy', [StockController::class, 'buy'])->name('stocks.buy');
     Route::post('/stocks/sell', [StockController::class, 'sell'])->name('stocks.sell');
     Route::get('/stocks/{symbol}', [StockController::class, 'show'])->name('stocks.show');
+    Route::get('/stocks/{symbol}/history', [StockController::class, 'history'])->name('stocks.history');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 

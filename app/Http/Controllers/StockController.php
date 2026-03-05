@@ -33,6 +33,38 @@ class StockController extends Controller
         return view('stocks.show', compact('symbol', 'quote', 'currentQuantity', 'isWatched', 'companyName'));
     }
 
+    public function history(string $symbol, Request $request, FinnhubService $api)
+    {
+        $range = $request->query('range', '3M');
+
+        [$yahooRange, $interval] = match ($range) {
+            '1W' => ['5d', '60m'],
+            '1M' => ['1mo', '1d'],
+            '1Y' => ['1y', '1wk'],
+            default => ['3mo', '1d'],
+        };
+
+        $data = $api->candles($symbol, $yahooRange, $interval);
+
+        if (!$data) {
+            return response()->json(['error' => 'No data available'], 404);
+        }
+
+        // Transform to array of {x: timestamp_ms, y: close_price}
+        $points = [];
+        foreach ($data['t'] as $i => $timestamp) {
+            if (($data['c'][$i] ?? null) === null) {
+                continue;
+            }
+            $points[] = [
+                'x' => $timestamp * 1000,
+                'y' => round($data['c'][$i], 2),
+            ];
+        }
+
+        return response()->json($points);
+    }
+
     public function buy(Request $request)
     {
         $request->validate([

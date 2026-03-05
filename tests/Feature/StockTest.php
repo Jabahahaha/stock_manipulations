@@ -112,6 +112,34 @@ test('stock detail page shows watching badge when stock is in watchlist', functi
         ->assertSee('Watching');
 });
 
+// --- History ---
+
+test('stock history endpoint returns candle data as json', function () {
+    $mock = Mockery::mock(FinnhubService::class);
+    $mock->shouldReceive('candles')->andReturn([
+        't' => [1709500800, 1709587200],
+        'c' => [150.00, 152.50],
+    ]);
+    $this->app->instance(FinnhubService::class, $mock);
+
+    $this->actingAs($this->user)
+        ->getJson(route('stocks.history', 'AAPL'))
+        ->assertOk()
+        ->assertJsonCount(2)
+        ->assertJsonFragment(['y' => 150.00])
+        ->assertJsonFragment(['y' => 152.50]);
+});
+
+test('stock history endpoint returns 404 when no data', function () {
+    $mock = Mockery::mock(FinnhubService::class);
+    $mock->shouldReceive('candles')->andReturn(null);
+    $this->app->instance(FinnhubService::class, $mock);
+
+    $this->actingAs($this->user)
+        ->getJson(route('stocks.history', 'INVALID'))
+        ->assertNotFound();
+});
+
 // --- Buy ---
 
 test('user can buy stock', function () {

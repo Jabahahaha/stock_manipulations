@@ -66,6 +66,65 @@
                     </div>
                 </div>
 
+                {{-- Price History Chart --}}
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
+                     x-data="{
+                        range: '3M',
+                        loading: true,
+                        chart: null,
+                        async fetchData(r) {
+                            this.range = r;
+                            this.loading = true;
+                            try {
+                                if (!window.ApexCharts) await window.loadApexCharts();
+                                const res = await fetch(`/stocks/{{ $symbol }}/history?range=${r}`);
+                                if (!res.ok) { this.loading = false; return; }
+                                const data = await res.json();
+                                const series = [{ data }];
+                                if (this.chart) {
+                                    this.chart.updateSeries(series);
+                                } else {
+                                    this.chart = new ApexCharts(this.$refs.chart, {
+                                        chart: { type: 'area', height: 300, toolbar: { show: false }, zoom: { enabled: false } },
+                                        series,
+                                        xaxis: { type: 'datetime' },
+                                        yaxis: { labels: { formatter: v => '$' + v.toFixed(2) } },
+                                        tooltip: { x: { format: 'MMM dd, yyyy' }, y: { formatter: v => '$' + v.toFixed(2) } },
+                                        dataLabels: { enabled: false },
+                                        stroke: { curve: 'smooth', width: 2 },
+                                        colors: ['#6366f1'],
+                                        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
+                                        grid: { borderColor: '#f1f1f1' },
+                                    });
+                                    this.chart.render();
+                                }
+                            } catch (e) {}
+                            this.loading = false;
+                        },
+                        init() { this.fetchData(this.range); }
+                     }">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-medium text-gray-900">Price History</h4>
+                            <div class="flex gap-1">
+                                <template x-for="r in ['1W', '1M', '3M', '1Y']" :key="r">
+                                    <button @click="fetchData(r)"
+                                        :class="range === r ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                        class="px-3 py-1 rounded-md text-xs font-medium transition"
+                                        x-text="r"></button>
+                                </template>
+                            </div>
+                        </div>
+                        <div x-ref="chart" x-show="!loading || chart"></div>
+                        <div x-show="loading && !chart" class="flex items-center justify-center h-[300px]">
+                            <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Buy / Sell Forms --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {{-- Buy Form --}}
