@@ -31,7 +31,7 @@ test('portfolio shows empty state when no holdings', function () {
     $this->actingAs($this->user)
         ->get(route('portfolio.index'))
         ->assertOk()
-        ->assertSee("You don't own any stocks yet", false);
+        ->assertSee("No holdings yet", false);
 });
 
 test('portfolio shows holdings with live prices', function () {

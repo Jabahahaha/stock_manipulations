@@ -14,7 +14,7 @@
                     <form method="GET" action="{{ route('stocks.index') }}" class="flex gap-4">
                         <input type="text" name="query" value="{{ $query }}" placeholder="Search stocks by name or symbol..."
                             class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-indigo-500">
                             Search
                         </button>
                     </form>
@@ -88,7 +88,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {{-- Buy Form --}}
-                            <div class="border rounded-lg p-4">
+                            <div class="border border-green-200 bg-green-50/30 rounded-lg p-4" x-data="{ qty: 0, price: {{ $quote['price'] }} }">
                                 <h4 class="text-lg font-semibold text-green-700 mb-3">Buy</h4>
                                 <form method="POST" action="{{ route('stocks.buy') }}">
                                     @csrf
@@ -99,11 +99,15 @@
                                     <div class="mb-3">
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                                         <input type="number" name="quantity" min="0.000001" step="any" required
+                                            x-model.number="qty"
                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     </div>
 
-                                    <p class="text-sm text-gray-500 mb-3">
+                                    <p class="text-sm text-gray-500 mb-1">
                                         Your balance: <span class="font-semibold">${{ number_format(auth()->user()->balance, 2) }}</span>
+                                    </p>
+                                    <p class="text-sm text-gray-500 mb-3" x-show="qty > 0" x-cloak>
+                                        Est. total: <span class="font-semibold" x-text="'$' + (qty * price).toFixed(2)"></span>
                                     </p>
 
                                     @error('balance')
@@ -117,7 +121,7 @@
                             </div>
 
                             {{-- Sell Form --}}
-                            <div class="border rounded-lg p-4">
+                            <div class="border border-red-200 bg-red-50/30 rounded-lg p-4">
                                 <h4 class="text-lg font-semibold text-red-700 mb-3">Sell</h4>
 
                                 @if($currentQuantity > 0)
@@ -151,13 +155,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            @endif
-
-            {{-- Success Message --}}
-            @if(session('success'))
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p class="text-green-800">{{ session('success') }}</p>
                 </div>
             @endif
 

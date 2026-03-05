@@ -10,8 +10,35 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
 
+                    {{-- Filter Tabs --}}
+                    <div class="flex gap-2 mb-4">
+                        <a href="{{ route('transactions.index') }}"
+                            class="px-4 py-2 rounded-md text-sm font-medium {{ !$filter ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            All
+                        </a>
+                        <a href="{{ route('transactions.index', ['type' => 'buy']) }}"
+                            class="px-4 py-2 rounded-md text-sm font-medium {{ $filter === 'buy' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            Buys
+                        </a>
+                        <a href="{{ route('transactions.index', ['type' => 'sell']) }}"
+                            class="px-4 py-2 rounded-md text-sm font-medium {{ $filter === 'sell' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            Sells
+                        </a>
+                    </div>
+
                     @if($transactions->isEmpty())
-                        <p class="text-gray-500">No transactions yet. <a href="{{ route('stocks.index') }}" class="text-indigo-600 hover:text-indigo-900 font-medium">Search and trade stocks</a> to get started.</p>
+                        <div class="text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+                            </svg>
+                            <h3 class="mt-3 text-sm font-semibold text-gray-900">No transactions yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">Your trading history will appear here once you make your first trade.</p>
+                            <div class="mt-4">
+                                <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-indigo-500">
+                                    Start Trading
+                                </a>
+                            </div>
+                        </div>
                     @else
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">

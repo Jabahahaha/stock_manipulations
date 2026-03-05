@@ -8,12 +8,17 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $transactions = $request->user()
+        $query = $request->user()
             ->transactions()
-            ->with('stock')
-            ->latest()
-            ->paginate(15);
+            ->with('stock');
 
-        return view('transactions.index', compact('transactions'));
+        $filter = $request->query('type');
+        if (in_array($filter, ['buy', 'sell'])) {
+            $query->where('type', $filter);
+        }
+
+        $transactions = $query->latest()->paginate(15)->withQueryString();
+
+        return view('transactions.index', compact('transactions', 'filter'));
     }
 }

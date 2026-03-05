@@ -33,7 +33,7 @@ test('watchlist shows empty state when no items', function () {
     $this->actingAs($this->user)
         ->get(route('watchlist.index'))
         ->assertOk()
-        ->assertSee('Your watchlist is empty');
+        ->assertSee('No stocks watched');
 });
 
 // --- Search ---

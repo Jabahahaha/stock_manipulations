@@ -12,22 +12,20 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Add Stock to Watchlist</h3>
 
-                @if(session('success'))
-                    <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
-                @endif
-
                 @if($errors->any())
-                    <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">
-                        @foreach($errors->all() as $error)
-                            <p>{{ $error }}</p>
-                        @endforeach
+                    <div class="mb-4">
+                        <x-notification type="error">
+                            @foreach($errors->all() as $error)
+                                <p>{{ $error }}</p>
+                            @endforeach
+                        </x-notification>
                     </div>
                 @endif
 
                 <form method="GET" action="{{ route('watchlist.index') }}" class="flex gap-4">
                     <input type="text" name="query" value="{{ $query }}" placeholder="Search stocks by name or symbol..."
                         class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-gray-700">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-indigo-500">
                         Search
                     </button>
                 </form>
@@ -80,11 +78,18 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Your Watchlist</h3>
-                        <span id="refresh-timer" class="text-xs text-gray-400"></span>
+                        <span id="refresh-timer" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"></span>
                     </div>
 
                     @if($items->isEmpty())
-                        <p class="text-gray-500">Your watchlist is empty. Add stocks above to start tracking them.</p>
+                        <div class="text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <h3 class="mt-3 text-sm font-semibold text-gray-900">No stocks watched</h3>
+                            <p class="mt-1 text-sm text-gray-500">Search for stocks above and add them to keep an eye on prices and set alerts.</p>
+                        </div>
                     @else
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">

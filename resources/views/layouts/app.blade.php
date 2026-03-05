@@ -27,6 +27,19 @@
                 </header>
             @endisset
 
+            {{-- Global Flash Notifications --}}
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+                @if(session('success'))
+                    <x-notification type="success">{{ session('success') }}</x-notification>
+                @endif
+                @if(session('error'))
+                    <x-notification type="error">{{ session('error') }}</x-notification>
+                @endif
+                @if(session('warning'))
+                    <x-notification type="warning">{{ session('warning') }}</x-notification>
+                @endif
+            </div>
+
             <!-- Page Content -->
             <main>
                 {{ $slot }}
