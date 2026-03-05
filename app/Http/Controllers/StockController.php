@@ -10,31 +10,27 @@ use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
 {
-    public function index(Request $request, FinnhubService $api, PortfolioService $portfolio)
+    public function index(Request $request, FinnhubService $api)
     {
         $query = $request->input('query');
-        $results = [];
-        $quote = null;
-        $symbol = $request->input('symbol');
-        $currentQuantity = 0;
+        $results = $query ? $api->search($query) : [];
 
-        // If a symbol is selected, fetch its quote; otherwise search
-        if ($symbol) {
-            $quote = $api->quote($symbol);
-            if ($quote) {
-                $quote['company_name'] = $request->input('name', $symbol);
-            }
+        return view('stocks.index', compact('query', 'results'));
+    }
 
-            // Compute current quantity from transactions
-            $stock = Stock::where('symbol', $symbol)->first();
-            if ($stock) {
-                $currentQuantity = $portfolio->getQuantity($request->user(), $stock->id);
-            }
-        } elseif ($query) {
-            $results = $api->search($query);
+    public function show(string $symbol, FinnhubService $api, PortfolioService $portfolio)
+    {
+        $quote = $api->quote($symbol);
+        $stock = Stock::where('symbol', $symbol)->first();
+        $companyName = $stock?->company_name ?? $symbol;
+        $currentQuantity = $stock ? $portfolio->getQuantity(auth()->user(), $stock->id) : 0;
+        $isWatched = $stock && auth()->user()->watchlists()->where('stock_id', $stock->id)->exists();
+
+        if ($quote) {
+            $quote['company_name'] = $companyName;
         }
 
-        return view('stocks.index', compact('query', 'results', 'quote', 'symbol', 'currentQuantity'));
+        return view('stocks.show', compact('symbol', 'quote', 'currentQuantity', 'isWatched', 'companyName'));
     }
 
     public function buy(Request $request)
@@ -50,7 +46,8 @@ class StockController extends Controller
         $totalCost = round($request->price * $request->quantity, 2);
 
         if ($totalCost > $user->balance) {
-            return back()->withErrors(['balance' => 'Insufficient balance. You need $' . number_format($totalCost, 2) . ' but only have $' . number_format($user->balance, 2) . '.']);
+            return redirect()->route('stocks.show', $request->symbol)
+                ->withErrors(['balance' => 'Insufficient balance. You need $' . number_format($totalCost, 2) . ' but only have $' . number_format($user->balance, 2) . '.']);
         }
 
         DB::transaction(function () use ($user, $request, $totalCost) {
@@ -70,7 +67,8 @@ class StockController extends Controller
             ]);
         });
 
-        return back()->with('success', "Bought {$request->quantity} shares of {$request->symbol} for \${$totalCost}.");
+        return redirect()->route('stocks.show', $request->symbol)
+            ->with('success', "Bought {$request->quantity} shares of {$request->symbol} for \${$totalCost}.");
     }
 
     public function sell(Request $request, PortfolioService $portfolio)
@@ -87,7 +85,8 @@ class StockController extends Controller
         $ownedQuantity = $stock ? $portfolio->getQuantity($user, $stock->id) : 0;
 
         if ($ownedQuantity < $request->quantity) {
-            return back()->withErrors(['quantity' => 'You don\'t own enough shares to sell.']);
+            return redirect()->route('stocks.show', $request->symbol)
+                ->withErrors(['quantity' => 'You don\'t own enough shares to sell.']);
         }
 
         $totalProceeds = round($request->price * $request->quantity, 2);
@@ -104,6 +103,7 @@ class StockController extends Controller
             ]);
         });
 
-        return back()->with('success', "Sold {$request->quantity} shares of {$request->symbol} for \${$totalProceeds}.");
+        return redirect()->route('stocks.show', $request->symbol)
+            ->with('success', "Sold {$request->quantity} shares of {$request->symbol} for \${$totalProceeds}.");
     }
 }

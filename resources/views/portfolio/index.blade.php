@@ -97,7 +97,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                                <a href="{{ route('stocks.index', ['symbol' => $item['symbol'], 'name' => $item['company_name']]) }}"
+                                                <a href="{{ route('stocks.show', $item['symbol']) }}"
                                                     class="text-indigo-600 hover:text-indigo-900 font-medium">Trade</a>
                                             </td>
                                         </tr>

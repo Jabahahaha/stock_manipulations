@@ -9,6 +9,8 @@ beforeEach(function () {
     $this->user = User::factory()->create(['balance' => 10000.00]);
 });
 
+// --- Search Page ---
+
 test('stocks page requires authentication', function () {
     $this->get(route('stocks.index'))->assertRedirect(route('login'));
 });
@@ -34,9 +36,14 @@ test('stocks page shows search results', function () {
         ->assertSee('View Quote');
 });
 
-test('stocks page shows quote when symbol selected', function () {
+// --- Detail Page ---
+
+test('stock detail page requires authentication', function () {
+    $this->get(route('stocks.show', 'AAPL'))->assertRedirect(route('login'));
+});
+
+test('stock detail page shows quote and trade forms', function () {
     $mock = Mockery::mock(FinnhubService::class);
-    $mock->shouldReceive('search')->andReturn([]);
     $mock->shouldReceive('quote')->with('AAPL')->andReturn([
         'symbol' => 'AAPL',
         'price' => 150.00,
@@ -48,21 +55,64 @@ test('stocks page shows quote when symbol selected', function () {
     $this->app->instance(FinnhubService::class, $mock);
 
     $this->actingAs($this->user)
-        ->get(route('stocks.index', ['symbol' => 'AAPL', 'name' => 'Apple Inc', 'query' => 'AAPL']))
+        ->get(route('stocks.show', 'AAPL'))
         ->assertOk()
-        ->assertSee('$150.00');
+        ->assertSee('$150.00')
+        ->assertSee('Buy')
+        ->assertSee('Sell');
 });
 
-test('stocks page handles null quote gracefully', function () {
+test('stock detail page handles null quote gracefully', function () {
     $mock = Mockery::mock(FinnhubService::class);
-    $mock->shouldReceive('search')->andReturn([]);
     $mock->shouldReceive('quote')->with('INVALID')->andReturn(null);
     $this->app->instance(FinnhubService::class, $mock);
 
     $this->actingAs($this->user)
-        ->get(route('stocks.index', ['symbol' => 'INVALID', 'query' => 'INVALID']))
-        ->assertOk();
+        ->get(route('stocks.show', 'INVALID'))
+        ->assertOk()
+        ->assertSee('Could not fetch quote');
 });
+
+test('stock detail page shows watchlist button', function () {
+    $mock = Mockery::mock(FinnhubService::class);
+    $mock->shouldReceive('quote')->with('AAPL')->andReturn([
+        'symbol' => 'AAPL',
+        'price' => 150.00,
+        'change' => 2.50,
+        'change_percent' => '1.69%',
+        'volume' => 50000000,
+        'latest_trading_day' => '2026-03-03',
+    ]);
+    $this->app->instance(FinnhubService::class, $mock);
+
+    $this->actingAs($this->user)
+        ->get(route('stocks.show', 'AAPL'))
+        ->assertOk()
+        ->assertSee('Add to Watchlist');
+});
+
+test('stock detail page shows watching badge when stock is in watchlist', function () {
+    $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
+    $this->user->watchlists()->create(['stock_id' => $stock->id]);
+
+    $mock = Mockery::mock(FinnhubService::class);
+    $mock->shouldReceive('quote')->with('AAPL')->andReturn([
+        'symbol' => 'AAPL',
+        'price' => 150.00,
+        'change' => 2.50,
+        'change_percent' => '1.69%',
+        'volume' => 50000000,
+        'latest_trading_day' => '2026-03-03',
+    ]);
+    $this->app->instance(FinnhubService::class, $mock);
+
+    $this->actingAs($this->user)
+        ->get(route('stocks.show', 'AAPL'))
+        ->assertOk()
+        ->assertSee('Watching');
+});
+
+// --- Buy ---
 
 test('user can buy stock', function () {
     $this->actingAs($this->user)
@@ -72,7 +122,7 @@ test('user can buy stock', function () {
             'price' => 100.00,
             'quantity' => 10,
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('stocks.show', 'AAPL'))
         ->assertSessionHas('success');
 
     expect((float) $this->user->fresh()->balance)->toEqual(9000.00);
@@ -119,15 +169,16 @@ test('user cannot buy stock with insufficient balance', function () {
             'price' => 100.00,
             'quantity' => 200,
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('stocks.show', 'AAPL'))
         ->assertSessionHasErrors('balance');
 
     expect((float) $this->user->fresh()->balance)->toEqual(10000.00);
     expect(Transaction::where('user_id', $this->user->id)->count())->toBe(0);
 });
 
+// --- Sell ---
+
 test('user can sell stock', function () {
-    // Create a buy transaction first
     $stock = Stock::create(['symbol' => 'AAPL', 'company_name' => 'Apple Inc']);
     $this->user->transactions()->create([
         'stock_id' => $stock->id,
@@ -144,7 +195,7 @@ test('user can sell stock', function () {
             'price' => 150.00,
             'quantity' => 5,
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('stocks.show', 'AAPL'))
         ->assertSessionHas('success');
 
     expect((float) $this->user->fresh()->balance)->toEqual(10750.00);
@@ -170,7 +221,6 @@ test('selling all shares works correctly', function () {
 
     expect((float) $this->user->fresh()->balance)->toEqual(11500.00);
 
-    // Verify sell transaction was created
     $sellTx = Transaction::where('user_id', $this->user->id)->where('type', 'sell')->first();
     expect((float) $sellTx->quantity)->toEqual(10.0);
 });
@@ -192,7 +242,7 @@ test('user cannot sell more shares than owned', function () {
             'price' => 150.00,
             'quantity' => 10,
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('stocks.show', 'AAPL'))
         ->assertSessionHasErrors('quantity');
 });
 
@@ -204,9 +254,11 @@ test('user cannot sell stock they dont own', function () {
             'price' => 150.00,
             'quantity' => 1,
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('stocks.show', 'AAPL'))
         ->assertSessionHasErrors('quantity');
 });
+
+// --- Transaction Records ---
 
 test('buy creates transaction record', function () {
     $this->actingAs($this->user)
