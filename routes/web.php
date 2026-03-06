@@ -4,6 +4,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WatchlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/watchlist/{id}/alert', [WatchlistController::class, 'updateAlert'])->name('watchlist.updateAlert');
     Route::delete('/watchlist/{id}/alert', [WatchlistController::class, 'removeAlert'])->name('watchlist.removeAlert');
     Route::delete('/watchlist/{id}', [WatchlistController::class, 'destroy'])->name('watchlist.destroy');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
 });
 
 require __DIR__.'/auth.php';
