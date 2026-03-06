@@ -99,6 +99,19 @@ class StockController extends Controller
             ]);
         });
 
+        $user->notifications()->create([
+            'type' => 'trade',
+            'title' => "Bought {$request->symbol}",
+            'message' => "Bought {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalCost}.",
+            'data' => [
+                'symbol' => $request->symbol,
+                'quantity' => $request->quantity,
+                'price' => $request->price,
+                'total' => $totalCost,
+                'action' => 'buy',
+            ],
+        ]);
+
         return redirect()->route('stocks.show', $request->symbol)
             ->with('success', "Bought {$request->quantity} shares of {$request->symbol} for \${$totalCost}.");
     }
@@ -134,6 +147,19 @@ class StockController extends Controller
                 'total_amount' => $totalProceeds,
             ]);
         });
+
+        $user->notifications()->create([
+            'type' => 'trade',
+            'title' => "Sold {$request->symbol}",
+            'message' => "Sold {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalProceeds}.",
+            'data' => [
+                'symbol' => $request->symbol,
+                'quantity' => $request->quantity,
+                'price' => $request->price,
+                'total' => $totalProceeds,
+                'action' => 'sell',
+            ],
+        ]);
 
         return redirect()->route('stocks.show', $request->symbol)
             ->with('success', "Sold {$request->quantity} shares of {$request->symbol} for \${$totalProceeds}.");

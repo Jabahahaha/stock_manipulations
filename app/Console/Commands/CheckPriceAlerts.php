@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Notification;
 use App\Models\Watchlist;
 use App\Services\FinnhubService;
 use Illuminate\Console\Command;
@@ -47,6 +48,20 @@ class CheckPriceAlerts extends Command
 
             if ($isTriggered) {
                 $alert->update(['alert_triggered' => true]);
+
+                Notification::create([
+                    'user_id' => $alert->user_id,
+                    'type' => 'price_alert',
+                    'title' => "Price Alert: {$symbol}",
+                    'message' => "{$symbol} is now \${$price} ({$alert->alert_condition} \${$alert->alert_price})",
+                    'data' => [
+                        'symbol' => $symbol,
+                        'price' => $price,
+                        'alert_price' => $alert->alert_price,
+                        'condition' => $alert->alert_condition,
+                    ],
+                ]);
+
                 $triggered++;
                 $this->info("ALERT: {$symbol} is now \${$price} ({$alert->alert_condition} \${$alert->alert_price})");
             }
