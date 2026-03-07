@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stock;
+use App\Services\CopyTradingService;
 use App\Services\FinnhubService;
 use App\Services\PortfolioService;
 use Illuminate\Http\Request;
@@ -112,6 +113,9 @@ class StockController extends Controller
             ],
         ]);
 
+        $stock = Stock::where('symbol', $request->symbol)->first();
+        app(CopyTradingService::class)->executeCopyTrades($user, $stock, 'buy', $request->price);
+
         return redirect()->route('stocks.show', $request->symbol)
             ->with('success', "Bought {$request->quantity} shares of {$request->symbol} for \${$totalCost}.");
     }
@@ -160,6 +164,8 @@ class StockController extends Controller
                 'action' => 'sell',
             ],
         ]);
+
+        app(CopyTradingService::class)->executeCopyTrades($user, $stock, 'sell', $request->price);
 
         return redirect()->route('stocks.show', $request->symbol)
             ->with('success', "Sold {$request->quantity} shares of {$request->symbol} for \${$totalProceeds}.");

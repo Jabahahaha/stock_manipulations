@@ -45,6 +45,62 @@
                 </div>
             </div>
 
+            {{-- Copy Trading --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Copy Trading</h3>
+
+                @if($copyTradingSetting)
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">
+                                You are copying {{ $trader->name }}'s trades at
+                                <strong>${{ number_format($copyTradingSetting->amount_per_trade, 2) }}</strong> per trade.
+                            </p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                Status: <span class="{{ $copyTradingSetting->is_active ? 'text-green-600' : 'text-gray-500' }}">{{ $copyTradingSetting->is_active ? 'Active' : 'Paused' }}</span>
+                            </p>
+                        </div>
+                        <form method="POST" action="{{ route('copy-trading.destroy', $trader) }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-4 py-2 border border-red-300 rounded-md text-sm font-semibold text-red-600 hover:bg-red-50">
+                                Stop Copying
+                            </button>
+                        </form>
+                    </div>
+                    {{-- Update amount form --}}
+                    <form method="POST" action="{{ route('copy-trading.store', $trader) }}" class="mt-4 flex items-end gap-3">
+                        @csrf
+                        <div class="flex-1">
+                            <label for="amount_per_trade" class="block text-xs font-medium text-gray-500 mb-1">Update amount per trade ($)</label>
+                            <input type="number" name="amount_per_trade" id="amount_per_trade" step="0.01" min="1"
+                                   value="{{ $copyTradingSetting->amount_per_trade }}"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 rounded-md text-sm font-semibold text-white hover:bg-indigo-500">
+                            Update
+                        </button>
+                    </form>
+                @else
+                    <p class="text-sm text-gray-500 mb-4">Automatically mirror {{ $trader->name }}'s trades. Set a dollar amount to invest per trade.</p>
+                    <form method="POST" action="{{ route('copy-trading.store', $trader) }}" class="flex items-end gap-3">
+                        @csrf
+                        <div class="flex-1">
+                            <label for="amount_per_trade" class="block text-xs font-medium text-gray-500 mb-1">Amount per trade ($)</label>
+                            <input type="number" name="amount_per_trade" id="amount_per_trade" step="0.01" min="1" placeholder="100.00"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 rounded-md text-sm font-semibold text-white hover:bg-indigo-500">
+                            Start Copying
+                        </button>
+                    </form>
+                @endif
+
+                @error('amount_per_trade')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Recent Trades --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Trades</h3>

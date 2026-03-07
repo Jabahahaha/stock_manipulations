@@ -4,6 +4,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\CopyTradingController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TraderController;
@@ -46,6 +47,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/traders/{trader}', [TraderController::class, 'show'])->name('traders.show');
     Route::post('/traders/{trader}/follow', [TraderController::class, 'follow'])->name('traders.follow');
     Route::delete('/traders/{trader}/follow', [TraderController::class, 'unfollow'])->name('traders.unfollow');
+    Route::post('/traders/{trader}/copy', [CopyTradingController::class, 'store'])->name('copy-trading.store');
+    Route::delete('/traders/{trader}/copy', [CopyTradingController::class, 'destroy'])->name('copy-trading.destroy');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');

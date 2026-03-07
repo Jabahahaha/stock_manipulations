@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CopyTradingSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,11 @@ class TraderController extends Controller
             ->limit(10)
             ->get();
 
-        return view('traders.show', compact('trader', 'isFollowing', 'recentTrades'));
+        $copyTradingSetting = CopyTradingSetting::where('user_id', $request->user()->id)
+            ->where('trader_id', $trader->id)
+            ->first();
+
+        return view('traders.show', compact('trader', 'isFollowing', 'recentTrades', 'copyTradingSetting'));
     }
 
     public function follow(Request $request, User $trader)

@@ -75,6 +75,16 @@ class User extends Authenticatable
         return $this->belongsToMany(User::class, 'follows', 'followed_user_id', 'user_id')->withTimestamps();
     }
 
+    public function copyTradingSettings(): HasMany
+    {
+        return $this->hasMany(CopyTradingSetting::class);
+    }
+
+    public function copiers(): HasMany
+    {
+        return $this->hasMany(CopyTradingSetting::class, 'trader_id');
+    }
+
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('followed_user_id', $user->id)->exists();
