@@ -20,6 +20,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        User::factory()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'is_admin' => true,
+        ]);
+
         // Stocks
         $stocks = collect([
             ['symbol' => 'AAPL', 'company_name' => 'Apple Inc.'],
