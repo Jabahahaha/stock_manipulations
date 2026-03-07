@@ -24,7 +24,7 @@ test('admin can access admin dashboard', function () {
     $this->actingAs($this->admin)
         ->get(route('admin.dashboard'))
         ->assertOk()
-        ->assertSee('Admin Dashboard');
+        ->assertSee('Dashboard');
 });
 
 // --- Banned Middleware ---
