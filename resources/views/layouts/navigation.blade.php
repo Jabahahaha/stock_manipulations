@@ -24,6 +24,9 @@
                     <x-nav-link :href="route('watchlist.index')" :active="request()->routeIs('watchlist.*')">
                         {{ __('Watchlist') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('traders.index')" :active="request()->routeIs('traders.*')">
+                        {{ __('Traders') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -115,6 +118,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('watchlist.index')" :active="request()->routeIs('watchlist.*')">
                 {{ __('Watchlist') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('traders.index')" :active="request()->routeIs('traders.*')">
+                {{ __('Traders') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 {{ __('Notifications') }}
