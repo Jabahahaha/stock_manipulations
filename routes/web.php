@@ -4,6 +4,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TraderController;
 use App\Http\Controllers\WatchlistController;
@@ -38,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/watchlist/{id}/alert', [WatchlistController::class, 'updateAlert'])->name('watchlist.updateAlert');
     Route::delete('/watchlist/{id}/alert', [WatchlistController::class, 'removeAlert'])->name('watchlist.removeAlert');
     Route::delete('/watchlist/{id}', [WatchlistController::class, 'destroy'])->name('watchlist.destroy');
+
+    Route::get('/feed', [FeedController::class, 'index'])->name('feed.index');
 
     Route::get('/traders', [TraderController::class, 'index'])->name('traders.index');
     Route::get('/traders/{trader}', [TraderController::class, 'show'])->name('traders.show');

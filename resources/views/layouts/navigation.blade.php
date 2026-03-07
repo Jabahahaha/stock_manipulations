@@ -27,6 +27,9 @@
                     <x-nav-link :href="route('traders.index')" :active="request()->routeIs('traders.*')">
                         {{ __('Traders') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('feed.index')" :active="request()->routeIs('feed.*')">
+                        {{ __('Feed') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -121,6 +124,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('traders.index')" :active="request()->routeIs('traders.*')">
                 {{ __('Traders') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('feed.index')" :active="request()->routeIs('feed.*')">
+                {{ __('Feed') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 {{ __('Notifications') }}
