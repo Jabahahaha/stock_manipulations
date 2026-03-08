@@ -131,6 +131,5 @@ test('dashboard sidebar has navigation links', function () {
         ->assertSee('Transactions')
         ->assertSee('Stocks')
         ->assertSee('Copy Trading')
-        ->assertSee('Announcements')
         ->assertSee('Back to App');
 });

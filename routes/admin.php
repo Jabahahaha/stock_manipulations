@@ -22,6 +22,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/copy-trading', [CopyTradingController::class, 'index'])->name('copyTrading.index');
 
-    // Placeholder for sidebar navigation — will be replaced in later part
-    Route::get('/announcements', fn () => abort(404))->name('announcements.index');
 });
