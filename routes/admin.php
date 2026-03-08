@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CopyTradingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\TransactionController;
@@ -19,7 +20,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::get('/stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
 
-    // Placeholders for sidebar navigation — will be replaced in later parts
-    Route::get('/copy-trading', fn () => abort(404))->name('copyTrading.index');
+    Route::get('/copy-trading', [CopyTradingController::class, 'index'])->name('copyTrading.index');
+
+    // Placeholder for sidebar navigation — will be replaced in later part
     Route::get('/announcements', fn () => abort(404))->name('announcements.index');
 });
