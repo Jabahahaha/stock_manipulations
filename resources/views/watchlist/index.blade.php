@@ -198,9 +198,15 @@
                             // Update price
                             const priceCell = row.querySelector('[data-field="price"]');
                             if (priceCell) {
-                                priceCell.innerHTML = item.current_price !== null
-                                    ? '$' + formatNumber(item.current_price)
-                                    : '<span class="text-gray-400">N/A</span>';
+                                if (item.current_price !== null) {
+                                    priceCell.textContent = '$' + formatNumber(item.current_price);
+                                } else {
+                                    const naSpan = document.createElement('span');
+                                    naSpan.className = 'text-gray-400';
+                                    naSpan.textContent = 'N/A';
+                                    priceCell.textContent = '';
+                                    priceCell.appendChild(naSpan);
+                                }
                             }
 
                             // Update change
@@ -209,9 +215,17 @@
                                 if (item.change !== null) {
                                     const color = item.change >= 0 ? 'text-green-600' : 'text-red-600';
                                     const sign = item.change >= 0 ? '+' : '';
-                                    changeCell.innerHTML = `<span class="${color}">${sign}${formatNumber(item.change)} (${item.change_percent})</span>`;
+                                    const span = document.createElement('span');
+                                    span.className = color;
+                                    span.textContent = `${sign}${formatNumber(item.change)} (${item.change_percent})`;
+                                    changeCell.textContent = '';
+                                    changeCell.appendChild(span);
                                 } else {
-                                    changeCell.innerHTML = '<span class="text-gray-400">N/A</span>';
+                                    const naSpan = document.createElement('span');
+                                    naSpan.className = 'text-gray-400';
+                                    naSpan.textContent = 'N/A';
+                                    changeCell.textContent = '';
+                                    changeCell.appendChild(naSpan);
                                 }
                             }
 

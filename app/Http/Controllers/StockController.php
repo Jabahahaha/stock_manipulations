@@ -72,7 +72,7 @@ class StockController extends Controller
             'symbol' => 'required|string',
             'company_name' => 'required|string',
             'price' => 'required|numeric|min:0.01',
-            'quantity' => 'required|numeric|min:0.000001',
+            'quantity' => 'required|numeric|min:0.000001|max:999999',
         ]);
 
         $user = $request->user();
@@ -126,7 +126,7 @@ class StockController extends Controller
             'symbol' => 'required|string',
             'company_name' => 'required|string',
             'price' => 'required|numeric|min:0.01',
-            'quantity' => 'required|numeric|min:0.000001',
+            'quantity' => 'required|numeric|min:0.000001|max:999999',
         ]);
 
         $user = $request->user();
