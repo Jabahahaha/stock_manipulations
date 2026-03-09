@@ -6,7 +6,26 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            {{-- Summary Stats --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-sm font-medium text-gray-500">Total Invested</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">${{ number_format($totalBought, 2) }}</p>
+                </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-sm font-medium text-gray-500">Total Sold</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">${{ number_format($totalSold, 2) }}</p>
+                </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <p class="text-sm font-medium text-gray-500">Net P&L</p>
+                    <p class="mt-1 text-2xl font-bold {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                        {{ $net >= 0 ? '+' : '' }}${{ number_format($net, 2) }}
+                    </p>
+                </div>
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
 

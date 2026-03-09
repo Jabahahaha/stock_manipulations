@@ -19,6 +19,10 @@ class TransactionController extends Controller
 
         $transactions = $query->latest()->paginate(15)->withQueryString();
 
-        return view('transactions.index', compact('transactions', 'filter'));
+        $totalBought = $request->user()->transactions()->where('type', 'buy')->sum('total_amount');
+        $totalSold = $request->user()->transactions()->where('type', 'sell')->sum('total_amount');
+        $net = $totalSold - $totalBought;
+
+        return view('transactions.index', compact('transactions', 'filter', 'totalBought', 'totalSold', 'net'));
     }
 }
