@@ -113,20 +113,20 @@ class StockController extends Controller
                 'price_per_share' => $request->price,
                 'total_amount' => $totalCost,
             ]);
-        });
 
-        $user->notifications()->create([
-            'type' => 'trade',
-            'title' => "Bought {$request->symbol}",
-            'message' => "Bought {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalCost}.",
-            'data' => [
-                'symbol' => $request->symbol,
-                'quantity' => $request->quantity,
-                'price' => $request->price,
-                'total' => $totalCost,
-                'action' => 'buy',
-            ],
-        ]);
+            $user->notifications()->create([
+                'type' => 'trade',
+                'title' => "Bought {$request->symbol}",
+                'message' => "Bought {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalCost}.",
+                'data' => [
+                    'symbol' => $request->symbol,
+                    'quantity' => $request->quantity,
+                    'price' => $request->price,
+                    'total' => $totalCost,
+                    'action' => 'buy',
+                ],
+            ]);
+        });
 
         $stock = Stock::where('symbol', $request->symbol)->first();
         app(CopyTradingService::class)->executeCopyTrades($user, $stock, 'buy', $request->price);
@@ -165,20 +165,20 @@ class StockController extends Controller
                 'price_per_share' => $request->price,
                 'total_amount' => $totalProceeds,
             ]);
-        });
 
-        $user->notifications()->create([
-            'type' => 'trade',
-            'title' => "Sold {$request->symbol}",
-            'message' => "Sold {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalProceeds}.",
-            'data' => [
-                'symbol' => $request->symbol,
-                'quantity' => $request->quantity,
-                'price' => $request->price,
-                'total' => $totalProceeds,
-                'action' => 'sell',
-            ],
-        ]);
+            $user->notifications()->create([
+                'type' => 'trade',
+                'title' => "Sold {$request->symbol}",
+                'message' => "Sold {$request->quantity} shares of {$request->symbol} at \${$request->price} per share for \${$totalProceeds}.",
+                'data' => [
+                    'symbol' => $request->symbol,
+                    'quantity' => $request->quantity,
+                    'price' => $request->price,
+                    'total' => $totalProceeds,
+                    'action' => 'sell',
+                ],
+            ]);
+        });
 
         app(CopyTradingService::class)->executeCopyTrades($user, $stock, 'sell', $request->price);
 
