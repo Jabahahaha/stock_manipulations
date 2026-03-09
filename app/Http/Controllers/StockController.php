@@ -34,6 +34,21 @@ class StockController extends Controller
         return view('stocks.show', compact('symbol', 'quote', 'currentQuantity', 'isWatched', 'companyName'));
     }
 
+    public function quote(string $symbol, FinnhubService $api)
+    {
+        $data = $api->quote($symbol);
+
+        if (!$data) {
+            return response()->json(['error' => 'Quote unavailable'], 404);
+        }
+
+        return response()->json([
+            'price' => $data['price'],
+            'change' => $data['change'],
+            'change_percent' => $data['change_percent'],
+        ]);
+    }
+
     public function history(string $symbol, Request $request, FinnhubService $api)
     {
         $range = $request->query('range', '3M');

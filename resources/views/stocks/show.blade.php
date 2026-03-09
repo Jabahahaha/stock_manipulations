@@ -25,7 +25,31 @@
                 </div>
             @else
                 {{-- Quote Header --}}
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
+                     x-data="{
+                        price: {{ $quote['price'] }},
+                        change: {{ $quote['change'] }},
+                        changePercent: '{{ $quote['change_percent'] }}',
+                        justUpdated: false,
+                        interval: null,
+                        async refreshQuote() {
+                            try {
+                                const res = await fetch('/stocks/{{ $symbol }}/quote');
+                                if (!res.ok) return;
+                                const data = await res.json();
+                                this.price = data.price;
+                                this.change = data.change;
+                                this.changePercent = data.change_percent;
+                                this.justUpdated = true;
+                                setTimeout(() => this.justUpdated = false, 3000);
+                                document.querySelectorAll('input[name=price]').forEach(el => el.value = data.price);
+                            } catch (e) {}
+                        },
+                        init() {
+                            this.interval = setInterval(() => this.refreshQuote(), 30000);
+                        },
+                        destroy() { clearInterval(this.interval); }
+                     }">
                     <div class="p-6">
                         <div class="flex items-center justify-between">
                             <div>
@@ -34,11 +58,12 @@
                             </div>
                             <div class="flex items-center gap-4">
                                 <div class="text-right">
-                                    <p class="text-3xl font-bold text-gray-900">${{ number_format($quote['price'], 2) }}</p>
-                                    <p class="text-sm {{ $quote['change'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $quote['change'] >= 0 ? '+' : '' }}{{ number_format($quote['change'], 2) }}
-                                        ({{ $quote['change_percent'] }})
+                                    <p class="text-3xl font-bold text-gray-900">$<span x-text="price.toFixed(2)">{{ number_format($quote['price'], 2) }}</span></p>
+                                    <p class="text-sm" :class="change >= 0 ? 'text-green-600' : 'text-red-600'">
+                                        <span x-text="(change >= 0 ? '+' : '') + change.toFixed(2)">{{ ($quote['change'] >= 0 ? '+' : '') . number_format($quote['change'], 2) }}</span>
+                                        (<span x-text="changePercent">{{ $quote['change_percent'] }}</span>)
                                     </p>
+                                    <p x-show="justUpdated" x-transition.opacity class="text-xs text-indigo-500 mt-1">Price updated</p>
                                 </div>
                                 {{-- Watchlist Toggle --}}
                                 @if($isWatched)

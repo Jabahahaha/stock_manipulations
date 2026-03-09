@@ -31,6 +31,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/stocks/sell', [StockController::class, 'sell'])->name('stocks.sell');
     Route::get('/stocks/{symbol}', [StockController::class, 'show'])->where('symbol', '[A-Z0-9]{1,10}')->name('stocks.show');
     Route::get('/stocks/{symbol}/history', [StockController::class, 'history'])->where('symbol', '[A-Z0-9]{1,10}')->name('stocks.history');
+    Route::get('/stocks/{symbol}/quote', [StockController::class, 'quote'])->where('symbol', '[A-Z0-9]{1,10}')->name('stocks.quote');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
