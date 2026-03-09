@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "crypto-exchange/app",
+    "name": "stock-trader/app",
     "type": "project",
-    "description": "Crypto Exchange web application.",
+    "description": "StockTrader web application.",
     "keywords": [
         "laravel",
         "framework"

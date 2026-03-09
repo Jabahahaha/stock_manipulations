@@ -16,9 +16,9 @@ class SiteLayout extends Component
     public function __construct(?string $title)
     {
         if ($title) {
-            $this->title = $title.' | Crypto Exchange';
+            $this->title = $title.' | StockTrader';
         } else {
-            $this->title = 'Crypto Exchange';
+            $this->title = 'StockTrader';
         }
     }
 
