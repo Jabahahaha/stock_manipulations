@@ -22,11 +22,15 @@
                     </div>
                 @endif
 
-                <form method="GET" action="{{ route('watchlist.index') }}" class="flex gap-4">
+                <form method="GET" action="{{ route('watchlist.index') }}" class="flex gap-4" x-data="{ loading: false }" @submit="loading = true">
                     <input type="text" name="query" value="{{ $query }}" placeholder="Search stocks by name or symbol..."
                         class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-indigo-500">
-                        Search
+                    <button type="submit" :disabled="loading" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-indigo-500 disabled:opacity-50">
+                        <svg x-show="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span x-text="loading ? 'Searching...' : 'Search'"></span>
                     </button>
                 </form>
             </div>
@@ -78,7 +82,13 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Your Watchlist</h3>
-                        <span id="refresh-timer" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"></span>
+                        <span class="inline-flex items-center gap-2">
+                            <svg id="refresh-spinner" class="animate-spin h-4 w-4 text-indigo-500 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <span id="refresh-timer" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"></span>
+                        </span>
                     </div>
 
                     @if($items->isEmpty())
@@ -187,7 +197,11 @@
                 return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
+            const spinnerEl = document.getElementById('refresh-spinner');
+
             function updatePrices() {
+                if (spinnerEl) spinnerEl.classList.remove('hidden');
+                if (timerEl) timerEl.textContent = 'Updating prices...';
                 fetch('{{ route("watchlist.prices") }}')
                     .then(r => r.json())
                     .then(items => {
@@ -246,8 +260,12 @@
                         });
 
                         countdown = INTERVAL;
+                        if (spinnerEl) spinnerEl.classList.add('hidden');
                     })
-                    .catch(() => { countdown = INTERVAL; });
+                    .catch(() => {
+                        countdown = INTERVAL;
+                        if (spinnerEl) spinnerEl.classList.add('hidden');
+                    });
             }
 
             setInterval(() => {
